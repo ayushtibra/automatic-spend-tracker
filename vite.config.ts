@@ -18,6 +18,8 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
+        // Android: long-press a bank SMS -> Share -> Spend Tracker opens a pre-filled entry.
+        share_target: { action: '/', method: 'GET', params: { title: 'title', text: 'text' } },
       },
     }),
   ],

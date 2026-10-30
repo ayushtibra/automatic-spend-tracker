@@ -43,7 +43,13 @@ export function parseBackup(text: string): Backup {
   return data as Backup;
 }
 
-export function downloadFile(filename: string, content: string, mime: string) {
+/** Save a file: browser download on the web, Android share sheet (Drive, Files, WhatsApp…) in the app. */
+export async function downloadFile(filename: string, content: string, mime: string) {
+  const { isNative, SmsInbox } = await import('../native/smsInbox');
+  if (isNative) {
+    await SmsInbox.shareFile({ filename, content, mime });
+    return;
+  }
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement('a'), { href: url, download: filename });

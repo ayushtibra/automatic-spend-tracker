@@ -6,6 +6,8 @@ import { db, getMeta, listCategories, listPaymentMethods, saveCategory, savePaym
 import { formatINR, paiseToInput, parseToPaise } from '../lib/money';
 import { monthKey } from '../lib/dates';
 import { downloadFile, parseBackup, toCSV, type Backup } from '../lib/export';
+import { isNative } from '../native/smsInbox';
+import { disableSmsCapture, enableSmsCapture, isSmsCaptureEnabled, syncSms } from '../lib/smsSync';
 
 export default function Settings() {
   return (
@@ -13,6 +15,7 @@ export default function Settings() {
       <header className="page-head">
         <h1>Settings</h1>
       </header>
+      {isNative && <SmsCaptureSection />}
       <BudgetSection />
       <PaymentMethodsSection />
       <CategoriesSection />
@@ -76,8 +79,8 @@ function PaymentMethodsSection() {
         </button>
       </div>
       <p className="hint">
-        Add each credit card, debit card and bank account (UPI payments come from a bank account or RuPay credit card). Last 4 digits will be used
-        later to match bank SMS automatically.
+        Add each credit card, debit card and bank account (UPI payments come from a bank account or RuPay credit card). The last 4 digits are
+        how bank SMS get matched to the right card.
       </p>
 
       {draft && (
@@ -295,6 +298,77 @@ function DataSection() {
           <input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importBackup(e.target.files[0])} />
         </label>
       </div>
+      {status && <p className="hint">{status}</p>}
+    </section>
+  );
+}
+
+// ---------- Automatic SMS capture (Android app only) ----------
+
+function SmsCaptureSection() {
+  const enabled = useLiveQuery(isSmsCaptureEnabled, []);
+  const lastChecked = useLiveQuery(() => getMeta<number>('smsLastCheckedAt'), []);
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const enable = async (daysBack: number) => {
+    setBusy(true);
+    const { granted, added } = await enableSmsCapture(daysBack);
+    setStatus(
+      granted
+        ? `On. Found ${added} bank transaction${added === 1 ? '' : 's'}. Review them in Inbox.`
+        : 'SMS permission was denied. Allow it in Android Settings → Apps → Spend Tracker → Permissions → SMS.',
+    );
+    setBusy(false);
+  };
+
+  const checkNow = async () => {
+    setBusy(true);
+    const added = await syncSms();
+    setStatus(added ? `${added} new bank transaction${added === 1 ? '' : 's'} in Inbox.` : 'No new bank SMS.');
+    setBusy(false);
+  };
+
+  if (enabled === undefined) return null;
+
+  return (
+    <section className="card">
+      <h3>Automatic SMS capture</h3>
+      {enabled ? (
+        <>
+          <p className="hint">
+            On. Bank and card alert SMS are picked up automatically and land in Inbox for one-tap confirm. Only messages from bank-style
+            senders (like AX-HDFCBK) are read, and nothing leaves this phone.
+            {lastChecked ? ` Last checked ${new Date(lastChecked).toLocaleString('en-IN')}.` : ''}
+          </p>
+          <div className="inline-form">
+            <button className="btn" disabled={busy} onClick={checkNow}>
+              Check now
+            </button>
+            <button className="btn danger" disabled={busy} onClick={disableSmsCapture}>
+              Turn off
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="hint">
+            Let the app read bank / card alert SMS so every spend is captured automatically. Only messages from bank-style senders are read,
+            and nothing leaves this phone. Pick how far back to import:
+          </p>
+          <div className="btn-col">
+            <button className="btn primary" disabled={busy} onClick={() => enable(0)}>
+              Turn on from today
+            </button>
+            <button className="btn" disabled={busy} onClick={() => enable(7)}>
+              Turn on, import last 7 days
+            </button>
+            <button className="btn" disabled={busy} onClick={() => enable(30)}>
+              Turn on, import last 30 days
+            </button>
+          </div>
+        </>
+      )}
       {status && <p className="hint">{status}</p>}
     </section>
   );

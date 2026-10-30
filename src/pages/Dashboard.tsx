@@ -7,15 +7,18 @@ import { daysInMonth, monthKey, nowLocal } from '../lib/dates';
 import { dailySpend, spendBy, totalSpent } from '../lib/stats';
 import MonthPicker from '../components/MonthPicker';
 import TxnRow from '../components/TxnRow';
+import QuickAddBar from '../components/QuickAddBar';
 
 interface Props {
   month: string;
   setMonth: (m: string) => void;
   onEdit: (t: Transaction) => void;
   onSeeAll: () => void;
+  /** Typed / spoken quick add from the bar at the top. */
+  onQuickAdd: (text: string) => void;
 }
 
-export default function Dashboard({ month, setMonth, onEdit, onSeeAll }: Props) {
+export default function Dashboard({ month, setMonth, onEdit, onSeeAll, onQuickAdd }: Props) {
   const txns = useLiveQuery(() => transactionsFor(month), [month]);
   const methods = useLiveQuery(() => listPaymentMethods(), []);
   const categories = useLiveQuery(() => listCategories(), []);
@@ -48,6 +51,8 @@ export default function Dashboard({ month, setMonth, onEdit, onSeeAll }: Props) 
         <MonthPicker month={month} setMonth={setMonth} />
       </header>
 
+      <QuickAddBar onSubmit={onQuickAdd} />
+
       <section className="card hero">
         <div className="hero-label">Spent</div>
         <div className="hero-amount">{formatINR(total)}</div>
@@ -64,7 +69,7 @@ export default function Dashboard({ month, setMonth, onEdit, onSeeAll }: Props) 
           <div className="hero-sub">Set a monthly budget in Settings</div>
         )}
         <div className="hero-sub">
-          {txns.length} entries · avg {formatINR(Math.round(total / Math.max(elapsed, 1)))}/day
+          {txns.length} {txns.length === 1 ? 'entry' : 'entries'} · avg {formatINR(Math.round(total / Math.max(elapsed, 1)))}/day
         </div>
         <div className="sparkbars" aria-hidden>
           {daily.map((v, i) => (
@@ -105,7 +110,7 @@ export default function Dashboard({ month, setMonth, onEdit, onSeeAll }: Props) 
               <div className="stat-line">
                 <span>
                   {m?.name ?? 'Unknown'}
-                  {m?.last4 ? ` ••${m.last4}` : ''} <small className="muted">{m && m.name !== KIND_LABELS[m.kind] ? KIND_LABELS[m.kind] : ''}</small>
+                  {m?.last4 ? ` ••${m.last4}` : ''} <small className="muted">{m && !m.name.toLowerCase().includes(KIND_LABELS[m.kind].toLowerCase()) ? KIND_LABELS[m.kind] : ''}</small>
                 </span>
                 <span className="num">{formatINR(spent)}</span>
               </div>

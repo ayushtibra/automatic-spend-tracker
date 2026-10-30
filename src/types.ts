@@ -69,3 +69,16 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   cash: 'Cash',
   other: 'Other',
 };
+
+/** A bank SMS waiting to be confirmed as a transaction (Android auto-capture). */
+export interface InboxItem {
+  /** Hash of sender + body, so the same SMS seen twice (live + inbox scan) is stored once. */
+  id: string;
+  sender: string;
+  body: string;
+  /** Epoch ms when the phone received it. */
+  receivedAt: number;
+  status: 'pending' | 'added' | 'dismissed';
+  txnId?: string;
+  createdAt: string;
+}

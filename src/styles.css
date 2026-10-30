@@ -70,7 +70,7 @@ h3 {
 }
 
 .content {
-  padding: 12px 16px calc(96px + env(safe-area-inset-bottom));
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));
 }
 
 .page-head {
@@ -572,4 +572,148 @@ textarea:focus {
   display: flex;
   gap: 12px;
   flex: none;
+}
+
+/* Fill notices (SMS / quick add) */
+.notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  background: var(--accent-soft);
+}
+.notice.warn {
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+}
+.notice .link {
+  padding: 0;
+}
+.raw-sms summary {
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.raw-sms pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.78rem;
+  background: var(--track);
+  padding: 10px;
+  border-radius: 8px;
+  margin: 6px 0 0;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Inbox */
+.page-head.spread {
+  justify-content: space-between;
+}
+.btn.small {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.btn.block {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.inbox-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inbox-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.inbox-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.inbox-actions .primary {
+  min-width: 90px;
+}
+.tab-icon {
+  position: relative;
+}
+.badge {
+  position: absolute;
+  top: -4px;
+  left: 70%;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--over);
+  color: #fff;
+  font-size: 0.68rem;
+  line-height: 18px;
+  text-align: center;
+}
+.chip.new {
+  border-style: dashed;
+}
+
+/* Quick add (type / speak / paste) */
+.quick-add {
+  margin-bottom: 12px;
+}
+.sheet .quick-add {
+  margin-bottom: 0;
+}
+.quick-add-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px 6px 6px 12px;
+}
+.quick-add-row:focus-within {
+  border-color: var(--accent);
+}
+.quick-add-row textarea {
+  flex: 1;
+  border: 0;
+  padding: 8px 0;
+  background: none;
+  resize: none;
+  outline: none;
+  min-height: 36px;
+  max-height: 140px;
+  field-sizing: content;
+}
+.quick-add-row .icon-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
+.quick-add-row .go {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.quick-add-row .go:disabled {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--muted);
+}
+.mic.live {
+  background: var(--over);
+  border-color: var(--over);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    transform: scale(1.08);
+  }
+}
+.error.small {
+  font-size: 0.8rem;
+  margin: 6px 4px 0;
 }
