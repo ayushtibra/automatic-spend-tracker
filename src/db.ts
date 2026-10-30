@@ -244,3 +244,8 @@ export async function pendingInbox(): Promise<InboxItem[]> {
   const rows = await db.inbox.where('status').equals('pending').toArray();
   return rows.sort((a, b) => b.receivedAt - a.receivedAt);
 }
+
+/** Set many inbox items' status in one go (Dismiss all / Undo). */
+export async function setInboxStatusBulk(ids: string[], status: InboxItem['status']) {
+  await db.inbox.bulkUpdate(ids.map((id) => ({ key: id, changes: { status } })));
+}

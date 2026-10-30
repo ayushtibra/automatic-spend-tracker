@@ -717,3 +717,18 @@ textarea:focus {
   font-size: 0.8rem;
   margin: 6px 4px 0;
 }
+
+.bulk-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.bulk-actions .btn {
+  flex: 1;
+}
+.undo-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}

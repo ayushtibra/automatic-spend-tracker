@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.Telephony;
 
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.FileProvider;
 
 import com.getcapacitor.JSArray;
@@ -80,6 +81,13 @@ public class SmsInboxPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("openInbox", openInbox);
         call.resolve(result);
+    }
+
+    /** Clears this app's "new spend" notifications (called when the Inbox is opened). */
+    @PluginMethod
+    public void clearNotifications(PluginCall call) {
+        NotificationManagerCompat.from(getContext()).cancelAll();
+        call.resolve();
     }
 
     /** Writes a text file (CSV / JSON backup) to cache and opens the Android share sheet. */

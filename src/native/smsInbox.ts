@@ -19,6 +19,8 @@ interface SmsInboxPlugin {
   takeLaunchAction(): Promise<{ openInbox: boolean }>;
   /** Write a text file to cache and open the Android share sheet. */
   shareFile(options: { filename: string; content: string; mime: string }): Promise<void>;
+  /** Remove this app's notifications from the notification shade. */
+  clearNotifications(): Promise<void>;
   addListener(event: 'smsReceived', listener: (sms: NativeSms) => void): Promise<PluginListenerHandle>;
   addListener(event: 'openInbox', listener: () => void): Promise<PluginListenerHandle>;
 }

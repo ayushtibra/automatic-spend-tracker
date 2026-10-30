@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { InboxItem } from '../types';
 import { KIND_LABELS } from '../types';
-import { addFromInbox, listCategories, listPaymentMethods, pendingInbox, resolveSms, setInboxStatus } from '../db';
+import { addFromInbox, listCategories, listPaymentMethods, pendingInbox, resolveSms, setInboxStatus, setInboxStatusBulk } from '../db';
 import { formatINR } from '../lib/money';
 import { dayLabel, timeLabel } from '../lib/dates';
 import { isSmsCaptureEnabled, syncSms } from '../lib/smsSync';
+import { isNative, SmsInbox } from '../native/smsInbox';
 
 interface Props {
   onReview: (item: InboxItem) => void;
@@ -23,6 +24,13 @@ export default function Inbox({ onReview, onOpenSettings }: Props) {
   }, []);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
+  /** Ids from the last "Dismiss all", kept so it can be undone. */
+  const [undo, setUndo] = useState<string[] | null>(null);
+
+  // Opening the Inbox means the "new spend" notifications have been seen: clear them from the shade.
+  useEffect(() => {
+    if (isNative) SmsInbox.clearNotifications().catch(() => {});
+  }, []);
 
   if (!rows || !methods || !categories || enabled === undefined) return null;
 
@@ -41,6 +49,18 @@ export default function Inbox({ onReview, onOpenSettings }: Props) {
     setBusy(true);
     for (const { item } of ready) await addFromInbox(item);
     setBusy(false);
+  };
+
+  const dismissAll = async () => {
+    const ids = rows.map((x) => x.item.id);
+    if (!confirm(`Dismiss all ${ids.length} items? They won't be added as spends.`)) return;
+    await setInboxStatusBulk(ids, 'dismissed');
+    setUndo(ids);
+  };
+
+  const undoDismiss = async () => {
+    if (undo) await setInboxStatusBulk(undo, 'pending');
+    setUndo(null);
   };
 
   return (
@@ -65,12 +85,28 @@ export default function Inbox({ onReview, onOpenSettings }: Props) {
         </section>
       )}
 
-      {enabled && rows.length === 0 && <p className="empty card">All caught up. New bank SMS will appear here.</p>}
+      {undo && (
+        <p className="notice undo-bar">
+          Dismissed {undo.length} item{undo.length === 1 ? '' : 's'}.
+          <button className="link" onClick={undoDismiss}>
+            Undo
+          </button>
+        </p>
+      )}
 
-      {ready.length > 1 && (
-        <button className="btn primary block" disabled={busy} onClick={addAllReady}>
-          Add all {ready.length} ready entries
-        </button>
+      {enabled && rows.length === 0 && !undo && <p className="empty card">All caught up. New bank SMS will appear here.</p>}
+
+      {rows.length > 1 && (
+        <div className="bulk-actions">
+          <button className="btn" disabled={busy} onClick={dismissAll}>
+            Dismiss all {rows.length}
+          </button>
+          {ready.length > 0 && (
+            <button className="btn primary" disabled={busy} onClick={addAllReady}>
+              Add all {ready.length} ready
+            </button>
+          )}
+        </div>
       )}
 
       {rows.map(({ item, r }) => {

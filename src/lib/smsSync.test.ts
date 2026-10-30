@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addTransaction, db, pendingInbox, resolveSms, savePaymentMethod, addFromInbox } from '../db';
+import { addTransaction, db, pendingInbox, resolveSms, savePaymentMethod, addFromInbox, setInboxStatusBulk } from '../db';
 import { ingestSms, smsId } from './smsSync';
 
 const AXIS = `Spent INR 919
@@ -67,5 +67,23 @@ describe('sms inbox', () => {
     expect((await resolveSms(AXIS.replace('FLIPKART GR', 'WHITE VENTURES'), at))?.ready).toBe(false);
     const au = 'Dr INR 5,000.00 - AU A/c X1102 14-OCT-2026\nRTGS DR-AUBLR62026101428481923 -ayush un\nBal INR 1,000.00';
     expect((await resolveSms(au, at))?.ready).toBe(false);
+  });
+});
+
+describe('dismiss all', () => {
+  it('dismisses every pending item and can undo it', async () => {
+    await ingestSms([
+      { id: '1', address: 'AX-AXISBK', body: AXIS, date: at },
+      { id: '2', address: 'AX-AXISBK', body: AXIS.replace('919', '250'), date: at },
+      { id: '3', address: 'AX-AXISBK', body: AXIS.replace('919', '75'), date: at },
+    ]);
+    const ids = (await pendingInbox()).map((i) => i.id);
+    expect(ids).toHaveLength(3);
+    await setInboxStatusBulk(ids, 'dismissed');
+    expect(await pendingInbox()).toHaveLength(0);
+    // Dismissed SMS are remembered, so a later inbox scan doesn't bring them back.
+    expect(await ingestSms([{ id: '1', address: 'AX-AXISBK', body: AXIS, date: at }])).toBe(0);
+    await setInboxStatusBulk(ids, 'pending');
+    expect(await pendingInbox()).toHaveLength(3);
   });
 });
